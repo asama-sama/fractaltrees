@@ -11,11 +11,12 @@
       var STAGE_WIDTH = 500;
       var STAGE_HEIGHT = 300;
       var branchLength = 100;
-      var SCALE_FACTOR = 3/5;
-      var MAX_ITERS = 6;
+      var SCALE_FACTOR = 3/5; // length each branch should be of previous branch
+      var SCALE_FACTOR_OFFSET = 1/4; // percentage a branch length can be randomly scaled by
+      var MAX_ITERS = 8;
       var ANG_L = Math.PI/6;
       var ANG_R = -Math.PI/6;
-      var ANG_OFFSET = Math.PI/20;
+      var ANG_OFFSET = Math.PI/10;
 
       function init() {
         var count=0;
@@ -60,7 +61,16 @@
         }
         angle += random(ANG_OFFSET);
         var newDir = rotate(dir, angle);
-        var newTo = {x: from.x + newDir.x, y: from.y + newDir.y};
+        var scaleFactor = 1-random(SCALE_FACTOR_OFFSET);
+        newDir = scale(
+          newDir,
+          scaleFactor
+        );
+
+        var newTo = {
+          x: from.x + newDir.x, 
+          y: from.y + newDir.y
+        };
         return newTo;
       }
 
