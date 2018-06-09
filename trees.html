@@ -1,0 +1,90 @@
+<html>
+  <head>
+    <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+  </head>
+  <body onload="init();">
+     <canvas id="mycanvas" width="500" height="300"></canvas>
+     <script type="text/javascript">
+
+      var g = new createjs.Graphics();
+      var stage = new createjs.Stage("mycanvas");
+      var STAGE_WIDTH = 500;
+      var STAGE_HEIGHT = 300;
+      var branchLength = 100;
+      var SCALE_FACTOR = 3/5;
+      var MAX_ITERS = 6;
+      var ANG_L = Math.PI/6;
+      var ANG_R = -Math.PI/6;
+      var ANG_OFFSET = Math.PI/20;
+
+      function init() {
+        var count=0;
+        stage.scaleY=-1;
+        stage.y=STAGE_HEIGHT;
+
+        var x=STAGE_WIDTH/2, y=0;
+
+        var posTo = {x, y:y+branchLength};
+        drawBranch({x, y}, posTo, count);
+
+      }
+
+      // takes x, y points and a direction vector {x, y}
+      function drawBranch(from, to, count) {
+        if(count > MAX_ITERS) {
+          return;
+        }
+        count++;
+        var shape = new createjs.Shape();
+        shape.graphics.setStrokeStyle(1).beginStroke("rgba(0,0,0,1)");
+        shape.graphics.moveTo(from.x, from.y);
+        shape.graphics.lineTo(to.x, to.y);
+        shape.graphics.endStroke();
+        stage.addChild(shape);
+        stage.update();
+
+        var dir = {x: to.x-from.x, y: to.y-from.y};
+        dir = scale(dir, SCALE_FACTOR);
+        var leftBranch = branchOff(true, to, dir);
+        var rightBranch = branchOff(false, to, dir);
+        drawBranch(to, leftBranch, count);
+        drawBranch(to, rightBranch, count);
+
+      }
+
+      // left: bool (if false, go right)
+      function branchOff(left, from, dir) {
+        var angle = ANG_R;
+        if(left) {
+          angle = ANG_L;
+        }
+        angle += random(ANG_OFFSET);
+        var newDir = rotate(dir, angle);
+        var newTo = {x: from.x + newDir.x, y: from.y + newDir.y};
+        return newTo;
+      }
+
+      // vec = {x, y}. Angle (radians)
+      function rotate(vec, ang) {
+        return {
+          x: vec.x*Math.cos(ang)-vec.y*Math.sin(ang),
+          y: vec.x*Math.sin(ang)+vec.y*Math.cos(ang)
+        }
+      }
+      function scale(vec, scale) {
+        return {x: vec.x*scale, y: vec.y*scale};
+      }
+      function unitVector(vec) {
+        var mag = getMag(vec);
+        return {x: x/mag, y: y/mag};
+      }
+      function getMag(vec) {
+        return Math.sqrt(vec.x^2+vec.y^2)
+      }
+      // random number [-max, max];
+      function random(max) {
+        return (Math.random()*2-1)*max;
+      }
+     </script>
+  </body>
+</html>
