@@ -18,6 +18,65 @@
       var ANG_R = -Math.PI/6;
       var ANG_OFFSET = Math.PI/10;
 
+      var branches = [];  // holds all branches
+
+      // f, t = from and to position
+      // iter: iter number this branch was created on
+      function branch(f, t, iter) {
+        this.from = f;
+        this.to = t;
+        if(iter === undefined) {
+          this.iter = 1;
+        } else {
+          this.iter = iter;
+        }
+        this.drawn = false;
+        this.branched = false;
+
+        this.info = function() {
+          console.log(this.from, this.to);
+        }
+
+        this.drawBranch = function() {
+          if(!this.drawn) {
+            drawBranch(this.from, this.to);
+          }
+          this.drawn = true;
+        }
+
+        this.newBranch = function() {
+          if(this.branched || this.iter === MAX_ITERS) {
+            return undefined;
+          }
+
+          // takes the vector of the current branch and uses it to get the directions of the next two branches
+          var dir = {
+            x: this.to.x-this.from.x, 
+            y: this.to.y-this.from.y
+          };
+          dir = scale(dir, SCALE_FACTOR);
+          var l_bp = branchOff(true, this.to, dir);
+          var r_bp = branchOff(false, this.to, dir);
+          this.branched = true;
+
+          var lBranch = new branch(this.to, l_bp, this.iter+1);
+          var rBranch = new branch(this.to, r_bp, this.iter+1);
+          return [lBranch, rBranch];
+        }
+      }
+
+      function tick() {
+        for(var i=branches.length-1; i>=0; i--){
+          branches[i].drawBranch();
+          var b = branches[i].newBranch();
+          if(b !== undefined) {
+            for(var j=0; j<b.length; j++) {
+              branches.push(b[j]);
+            }
+          }
+        }
+      }
+
       function init() {
         var count=0;
         stage.scaleY=-1;
@@ -26,16 +85,12 @@
         var x=STAGE_WIDTH/2, y=0;
 
         var posTo = {x, y:y+branchLength};
-        drawBranch({x, y}, posTo, count);
-
+        var b = new branch({x, y}, posTo);
+        branches.push(b);
       }
 
       // takes x, y points and a direction vector {x, y}
-      function drawBranch(from, to, count) {
-        if(count > MAX_ITERS) {
-          return;
-        }
-        count++;
+      function drawBranch(from, to) {
         var shape = new createjs.Shape();
         shape.graphics.setStrokeStyle(1).beginStroke("rgba(0,0,0,1)");
         shape.graphics.moveTo(from.x, from.y);
@@ -43,16 +98,10 @@
         shape.graphics.endStroke();
         stage.addChild(shape);
         stage.update();
-
-        var dir = {x: to.x-from.x, y: to.y-from.y};
-        dir = scale(dir, SCALE_FACTOR);
-        var leftBranch = branchOff(true, to, dir);
-        var rightBranch = branchOff(false, to, dir);
-        drawBranch(to, leftBranch, count);
-        drawBranch(to, rightBranch, count);
-
       }
 
+      // takes a position and returns the position
+      // for the end of the new branch to go
       // left: bool (if false, go right)
       function branchOff(left, from, dir) {
         var angle = ANG_R;
@@ -95,6 +144,8 @@
       function random(max) {
         return (Math.random()*2-1)*max;
       }
-     </script>
+
+      createjs.Ticker.addEventListener("tick", tick);
+    </script>
   </body>
 </html>
