@@ -25,36 +25,62 @@
       function branch(f, t, iter) {
         this.from = f;
         this.to = t;
+        this.growthUpTo = f; // where the branch has grown to so far
+        this.growTime = 700; // time for branch to grow ms
+        this.grown = false;
+        this.branched = false;
+
+        // the shape object for this branch
+        var shape = new createjs.Shape();
+        this.branchShape = shape;
+        stage.addChild(shape);
+
+        this.created = new Date().getTime(); // creation in milliseconds
+
         if(iter === undefined) {
           this.iter = 1;
         } else {
           this.iter = iter;
         }
-        this.drawn = false;
-        this.branched = false;
 
         this.info = function() {
           console.log(this.from, this.to);
         }
 
-        this.drawBranch = function() {
-          if(!this.drawn) {
-            drawBranch(this.from, this.to);
+        // at any given time, calculates how far the branch has grown
+        var getBranchTo = () => {
+          var now = new Date().getTime();
+          var percent = (now - this.created)/this.growTime;
+          if(percent > 1) {
+            percent = 1;
+            this.grown = true;
           }
-          this.drawn = true;
+          var dir = getVector(this.to, this.from);
+          dir = scaleVector(dir, percent);
+          return addVectors(dir, this.from);
+        }
+
+        // draws the branch to the canvas
+        this.drawBranch = function() {
+          if(!this.grown) {
+            var growTo = getBranchTo();
+
+            this.branchShape.graphics.setStrokeStyle(1).beginStroke("rgba(0,0,0,1)");
+            this.branchShape.graphics.moveTo(this.growthUpTo.x, this.growthUpTo.y);
+            this.branchShape.graphics.lineTo(growTo.x, growTo.y);
+            this.branchShape.graphics.endStroke();
+
+            this.growthUpTo = growTo;
+          }
         }
 
         this.newBranch = function() {
-          if(this.branched || this.iter === MAX_ITERS) {
+          // do not make a new branch if one has already been made, if the current branch is still growing, or we have reached the max iterations
+          if(this.branched || !this.grown || this.iter === MAX_ITERS) {
             return undefined;
           }
-
-          // takes the vector of the current branch and uses it to get the directions of the next two branches
-          var dir = {
-            x: this.to.x-this.from.x, 
-            y: this.to.y-this.from.y
-          };
-          dir = scale(dir, SCALE_FACTOR);
+          var dir = getVector(this.to, this.from);
+          dir = scaleVector(dir, SCALE_FACTOR);
           var l_bp = branchOff(true, this.to, dir);
           var r_bp = branchOff(false, this.to, dir);
           this.branched = true;
@@ -63,7 +89,7 @@
           var rBranch = new branch(this.to, r_bp, this.iter+1);
           return [lBranch, rBranch];
         }
-      }
+      } // end branch object
 
       function tick() {
         for(var i=branches.length-1; i>=0; i--){
@@ -75,6 +101,7 @@
             }
           }
         }
+        stage.update();
       }
 
       function init() {
@@ -89,17 +116,6 @@
         branches.push(b);
       }
 
-      // takes x, y points and a direction vector {x, y}
-      function drawBranch(from, to) {
-        var shape = new createjs.Shape();
-        shape.graphics.setStrokeStyle(1).beginStroke("rgba(0,0,0,1)");
-        shape.graphics.moveTo(from.x, from.y);
-        shape.graphics.lineTo(to.x, to.y);
-        shape.graphics.endStroke();
-        stage.addChild(shape);
-        stage.update();
-      }
-
       // takes a position and returns the position
       // for the end of the new branch to go
       // left: bool (if false, go right)
@@ -111,7 +127,7 @@
         angle += random(ANG_OFFSET);
         var newDir = rotate(dir, angle);
         var scaleFactor = 1-random(SCALE_FACTOR_OFFSET);
-        newDir = scale(
+        newDir = scaleVector(
           newDir,
           scaleFactor
         );
@@ -130,7 +146,7 @@
           y: vec.x*Math.sin(ang)+vec.y*Math.cos(ang)
         }
       }
-      function scale(vec, scale) {
+      function scaleVector(vec, scale) {
         return {x: vec.x*scale, y: vec.y*scale};
       }
       function unitVector(vec) {
@@ -144,6 +160,19 @@
       function random(max) {
         return (Math.random()*2-1)*max;
       }
+      // takes the vector of the current branch and uses it to get the directions of the next two branches
+      var getVector = (p1, p2) => {
+         return {
+          x: p1.x-p2.x, 
+          y: p1.y-p2.y
+        };
+      }
+      var addVectors = (v1, v2) => {
+        return {
+          x: v1.x + v2.x,
+          y: v1.y + v2.y
+        };
+      } 
 
       createjs.Ticker.addEventListener("tick", tick);
     </script>
