@@ -18,7 +18,8 @@
       var ANG_R = -Math.PI/6;
       var ANG_OFFSET = Math.PI/10;
       var branchGrowTime = 700; // time for branch to grow ms
-      var branchGrowVariance = 1; // percentage variance grow time
+      var branchGrowVariance = 0; // percentage variance grow time
+      var startDeletions = false;
 
       var branches = [];  // holds all branches
 
@@ -28,7 +29,7 @@
         this.from = f;
         this.to = t;
         this.growthUpTo = f; // where the branch has grown to so far
-        this.growTime = branchGrowTime+ 5*branchGrowTime*Math.random();
+        this.growTime = branchGrowTime+ branchGrowVariance*5*branchGrowTime*Math.random();
         this.grown = false;
         this.branched = false;
 
@@ -74,7 +75,7 @@
 
             this.growthUpTo = growTo;
           }
-        }
+        };
 
         this.newBranch = function() {
           // do not make a new branch if one has already been made, if the current branch is still growing, or we have reached the max iterations
@@ -90,21 +91,49 @@
           var lBranch = new branch(this.to, l_bp, this.iter+1);
           var rBranch = new branch(this.to, r_bp, this.iter+1);
           return [lBranch, rBranch];
-        }
+        };
+
+        this.getBranchShape = function() {
+          return this.branchShape;
+        };
       } // end branch object
 
       function tick() {
+        var allBranched = true;
         for(var i=branches.length-1; i>=0; i--){
           branches[i].drawBranch();
+          if(branches[i].grown === false) {
+            allBranched = false;
+          }
           var b = branches[i].newBranch();
           if(b !== undefined) {
+            allBranched = false;
             for(var j=0; j<b.length; j++) {
               branches.push(b[j]);
             }
           }
         }
+        if(allBranched && !startDeletions) {
+          console.log('start deleting')
+          startDeletions = true;
+          deleteBranches();
+        }
         stage.update();
       }
+
+      var deleteBranches = () => {
+        for(var i=0; i<branches.length; i++) {
+          // branches[i].branchShape.rotation += .1
+          // if(branches[i].branchShape !== undefined) {
+            // stage.removeChild(branches[i].branchShape);
+            // branches[i].branchShape = undefined;
+            // break;
+          // }
+        }
+        setTimeout(() => {
+          deleteBranches();
+        }, 10);
+      };
 
       function init() {
         var count=0;
@@ -146,7 +175,7 @@
         return {
           x: vec.x*Math.cos(ang)-vec.y*Math.sin(ang),
           y: vec.x*Math.sin(ang)+vec.y*Math.cos(ang)
-        }
+        };
       }
       function scaleVector(vec, scale) {
         return {x: vec.x*scale, y: vec.y*scale};
@@ -156,7 +185,7 @@
         return {x: x/mag, y: y/mag};
       }
       function getMag(vec) {
-        return Math.sqrt(vec.x^2+vec.y^2)
+        return Math.sqrt(vec.x^2+vec.y^2);
       }
       // random number [-max, max];
       function random(max) {
@@ -168,13 +197,13 @@
           x: p1.x-p2.x, 
           y: p1.y-p2.y
         };
-      }
+      };
       var addVectors = (v1, v2) => {
         return {
           x: v1.x + v2.x,
           y: v1.y + v2.y
         };
-      } 
+      };
 
       createjs.Ticker.addEventListener("tick", tick);
     </script>
