@@ -17,6 +17,8 @@
       var ANG_L = Math.PI/6;
       var ANG_R = -Math.PI/6;
       var ANG_OFFSET = Math.PI/10;
+      var branchGrowTime = 700; // time for branch to grow ms
+      var branchGrowVariance = 1; // percentage variance grow time
 
       var branches = [];  // holds all branches
 
@@ -26,7 +28,7 @@
         this.from = f;
         this.to = t;
         this.growthUpTo = f; // where the branch has grown to so far
-        this.growTime = 700; // time for branch to grow ms
+        this.growTime = branchGrowTime+ 5*branchGrowTime*Math.random();
         this.grown = false;
         this.branched = false;
 
@@ -45,7 +47,7 @@
 
         this.info = function() {
           console.log(this.from, this.to);
-        }
+        };
 
         // at any given time, calculates how far the branch has grown
         var getBranchTo = () => {
@@ -58,7 +60,7 @@
           var dir = getVector(this.to, this.from);
           dir = scaleVector(dir, percent);
           return addVectors(dir, this.from);
-        }
+        };
 
         // draws the branch to the canvas
         this.drawBranch = function() {
